@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chauffage 5×8</title>
+<style>
+:root{
+  --bg:#EEF1F3; --surface:#FFFFFF; --line:#D5DBE0; --text:#1B2329; --muted:#5E6B75;
+  --matin:#F2C400; --matin-t:#2A2200; --am:#D93A2B; --am-t:#FFFFFF;
+  --nuit:#1E7FCB; --nuit-t:#FFFFFF; --repos:#E3E7EA; --repos-t:#33404A;
+  --chaud:#E8692A; --froid:#7FA6BF; --focus:#1E7FCB;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151C21; --surface:#1F2830; --line:#33404A; --text:#E9EEF1; --muted:#9AA7B0;
+    --repos:#2B363F; --repos-t:#C9D3DA; --froid:#5D8299;
+    color-scheme: dark;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.4 "Roboto Flex",Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent}
+main{max-width:720px;margin:0 auto;padding:12px 12px 90px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+/* Barre d’onglets fixe en bas, au pouce */
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;border:0;background:none;padding:14px 0;font-weight:600;color:var(--muted)}
+nav button[aria-selected="true"]{color:var(--text);box-shadow:inset 0 3px 0 var(--chaud)}
+
+/* État du moment */
+.etat{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--surface);margin-bottom:12px}
+.flamme{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:22px;flex:none}
+.etat.on .flamme{background:var(--chaud)} .etat.off .flamme{background:var(--froid)}
+.etat strong{display:block;font-size:1.15rem}
+.etat span{color:var(--muted);font-size:.9rem}
+
+/* Calendrier */
+.mois{display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px}
+.mois h2{margin:0;font-size:1.2rem;text-transform:capitalize}
+.mois button{border:0;background:var(--surface);width:44px;height:44px;border-radius:50%;font-size:1.3rem}
+.grille{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.jsem{text-align:center;font-size:.75rem;color:var(--muted);padding-bottom:2px}
+.jour{border:0;border-radius:6px;min-height:52px;padding:3px 2px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;position:relative}
+.jour .n{font-size:.8rem;align-self:flex-end;padding-right:3px}
+.jour .p{font-size:.72rem;font-weight:600}
+.jour.hors{opacity:.35}
+.jour.auj{outline:3px solid var(--text);outline-offset:-3px}
+.jour.modif::after{content:"";position:absolute;left:5px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--chaud)}
+.M{background:var(--matin);color:var(--matin-t)} .A{background:var(--am);color:var(--am-t)}
+.N1,.N2{background:var(--nuit);color:var(--nuit-t)} .R{background:var(--repos);color:var(--repos-t)}
+.aide{color:var(--muted);font-size:.85rem;margin:10px 2px}
+
+/* Réglages */
+.bloc{background:var(--surface);border-radius:14px;padding:14px;margin-bottom:12px}
+.bloc h3{margin:0 0 10px;font-size:1rem}
+.ligne{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0}
+.ligne label{flex:1}
+input[type=date],input[type=time],#mac,#email,#mdp{max-width:60%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;min-height:44px}
+.pas{display:flex;align-items:center;gap:6px}
+.pas button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--bg);font-size:1.2rem}
+.pas output{min-width:52px;text-align:center;font-weight:700;font-size:1.1rem}
+.choix{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.choix button{flex:1;border:0;background:var(--bg);padding:10px 8px}
+.choix button[aria-pressed="true"]{background:var(--froid);color:#fff;font-weight:600}
+
+.postes{display:grid;gap:12px}
+@media (min-width:600px){.postes{grid-template-columns:1fr 1fr}}
+.poste{border-left:6px solid}
+.poste h3{display:flex;justify-content:space-between;align-items:center}
+/* Ruban 24 h : l’élément signature */
+.ruban{position:relative;height:22px;border-radius:5px;background:var(--froid);opacity:.9;margin:6px 0 2px;overflow:hidden}
+.ruban i{position:absolute;top:0;bottom:0;background:var(--chaud)}
+.heures{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:8px}
+.plage{display:flex;align-items:center;gap:6px;margin:6px 0}
+.plage input{flex:1;min-width:0}
+.plage .x{border:0;background:none;width:40px;height:40px;font-size:1.2rem;color:var(--muted)}
+.plage.err input{border-color:var(--am)}
+.ajout{border:1px dashed var(--line);background:none;border-radius:8px;width:100%;padding:10px;color:var(--muted)}
+.raz{border:0;background:none;color:var(--am);padding:12px;width:100%}
+.toast{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.vu{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <section id="vuePlanning">
+    <div class="etat" id="etat"></div>
+    <div class="mois">
+      <button id="prec" aria-label="Mois précédent">‹</button>
+      <h2 id="titreMois"></h2>
+      <button id="suiv" aria-label="Mois suivant">›</button>
+    </div>
+    <div class="grille" id="grille"></div>
+    <p class="aide">Touche un jour pour le passer en Repos, touche-le encore pour remettre ton poste. Le point orange marque un jour modifié.</p>
+  </section>
+
+  <section id="vueReglages" hidden>
+    <div class="bloc">
+      <h3>Cycle</h3>
+      <div class="ligne"><label for="debut">Un jour de premier Matin</label><input type="date" id="debut"></div>
+    </div>
+    <div class="bloc">
+      <h3>Températures</h3>
+      <div class="ligne"><span>Chauffage allumé</span>
+        <div class="pas"><button data-t="confort" data-d="-0.5" aria-label="Baisser">−</button><output id="oConfort"></output><button data-t="confort" data-d="0.5" aria-label="Monter">+</button></div></div>
+      <div class="ligne"><span>Chauffage coupé</span>
+        <div class="pas"><button data-t="eco" data-d="-0.5" aria-label="Baisser">−</button><output id="oEco"></output><button data-t="eco" data-d="0.5" aria-label="Monter">+</button></div></div>
+      <div class="ligne"><span>Quand c’est coupé</span>
+        <div class="choix" id="modeCoupe"><button data-m="eco">Éco</button><button data-m="horsgel">Hors-gel</button></div></div>
+    </div>
+    <div class="bloc">
+      <h3>Box Delta Dore</h3>
+      <p class="aide" style="margin-top:0">Les mêmes identifiants que dans l’appli Delta Dore. Le numéro de la box est sur l’étiquette dessous (12 caractères, commence par 001A25).</p>
+      <div class="ligne"><label for="mac">Numéro de la box</label><input id="mac" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="001A25XXXXXX" maxlength="17" style="width:150px"></div>
+      <div class="ligne"><label for="email">Email</label><input id="email" type="email" autocomplete="username" style="width:190px"></div>
+      <div class="ligne"><label for="mdp">Mot de passe</label><input id="mdp" type="password" autocomplete="current-password" style="width:190px"></div>
+      <button class="ajout" id="tester" style="border-style:solid;color:var(--text);font-weight:600">Tester la connexion</button>
+      <p class="aide" id="etatBox" role="status"></p>
+      <details id="brutBloc" hidden><summary class="aide">Données reçues de la box</summary>
+        <button class="ajout" id="copier">Copier les données</button>
+        <pre id="brut" style="overflow-x:auto;font-size:.7rem;max-height:300px"></pre></details>
+    </div>
+    <div class="postes" id="postes"></div>
+    <button class="raz" id="raz">Remettre les horaires d’origine</button>
+  </section>
+</main>
+<nav>
+  <button id="tPlanning" aria-selected="true">Planning</button>
+  <button id="tReglages" aria-selected="false">Réglages</button>
+</nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const CYCLE=['M','M','A','A','N1','N2','R','R','R','R'];
+const NOMS={M:'Matin',A:'Après-midi',N1:'Nuit 1',N2:'Nuit 2',R:'Repos'};
+const COURT={M:'Matin',A:'AM',N1:'Nuit',N2:'Nuit',R:'Repos'};
+const COUL={M:'var(--matin)',A:'var(--am)',N1:'var(--nuit)',N2:'var(--nuit)',R:'var(--repos-t)'};
+const DEFAUT={debut:'2026-11-04',confort:21.5,eco:19,coupe:'eco',overrides:{},box:{mac:'',email:'',mdp:''},plages:{
+  M:[['03:30','04:55'],['14:00','21:30']], A:[['08:00','13:00']],
+  N1:[['12:00','20:55']], N2:[['12:00','22:30']], R:[['08:00','22:30']] }};
+const CLE='chauffage58';
+let R=charger(), vue=new Date(); vue.setDate(1);
+
+function charger(){try{const s=localStorage.getItem(CLE);if(s)return Object.assign(structuredClone(DEFAUT),JSON.parse(s))}catch(e){}return structuredClone(DEFAUT)}
+let tt;function sauver(msg){try{localStorage.setItem(CLE,JSON.stringify(R))}catch(e){}
+  const t=document.getElementById('toast');t.textContent=msg||'Réglages enregistrés';t.classList.add('vu');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('vu'),1400)}
+
+const cle=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const jourNum=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/864e5};
+const posteCycle=k=>CYCLE[(((jourNum(k)-jourNum(R.debut))%10)+10)%10];
+const poste=k=>R.overrides[k]?'R':posteCycle(k);
+const min=h=>{const[a,b]=h.split(':').map(Number);return a*60+b};
+const deg=v=>v.toFixed(1).replace('.',',')+' °C';
+
+/* État du moment : allumé ou coupé, et jusqu’à quand */
+function etat(){
+  const now=new Date(),k=cle(now),p=poste(k),m=now.getHours()*60+now.getMinutes();
+  const pl=(R.plages[p]||[]).filter(x=>min(x[1])>min(x[0])).sort((a,b)=>min(a[0])-min(b[0]));
+  const en=pl.find(x=>m>=min(x[0])&&m<min(x[1]));
+  let titre,detail,on=!!en;
+  if(en){titre='Allumé à '+deg(R.confort);detail='Jusqu’à '+en[1]}
+  else{titre=(R.coupe==='horsgel'?'Hors-gel':'Coupé à '+deg(R.eco));
+    const suite=pl.find(x=>min(x[0])>m);
+    if(suite)detail='Rallumage à '+suite[0];
+    else{const d=new Date(now);d.setDate(d.getDate()+1);const p2=poste(cle(d));const f=(R.plages[p2]||[]).map(x=>x[0]).sort()[0];
+      detail=f?'Rallumage demain à '+f+' ('+NOMS[p2]+')':'Pas de rallumage prévu demain'}}
+  document.getElementById('etat').className='etat '+(on?'on':'off');
+  document.getElementById('etat').innerHTML='<div class="flamme" aria-hidden="true">'+(on?'🔥':'❄️')+'</div><div><strong>'+titre+'</strong><span>Aujourd’hui : '+NOMS[p]+' · '+detail+'</span></div>';
+}
+
+function planning(){
+  const g=document.getElementById('grille');g.innerHTML='';
+  ['L','M','M','J','V','S','D'].forEach(j=>g.insertAdjacentHTML('beforeend','<div class="jsem">'+j+'</div>'));
+  document.getElementById('titreMois').textContent=vue.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  const d=new Date(vue);d.setDate(1-((vue.getDay()+6)%7));
+  const auj=cle(new Date());
+  for(let i=0;i<42;i++){
+    const k=cle(d),p=poste(k),b=document.createElement('button');
+    b.className='jour '+p+(d.getMonth()!==vue.getMonth()?' hors':'')+(k===auj?' auj':'')+(R.overrides[k]?' modif':'');
+    b.innerHTML='<span class="n">'+d.getDate()+'</span><span class="p">'+COURT[p]+'</span>';
+    b.setAttribute('aria-label',d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+', '+NOMS[p]);
+    b.onclick=()=>{
+      if(R.overrides[k]){delete R.overrides[k];sauver('Poste remis : '+NOMS[posteCycle(k)])}
+      else if(posteCycle(k)==='R'){sauver('C’est déjà un jour de repos');return}
+      else{R.overrides[k]=1;sauver('Passé en Repos')}
+      planning();etat()};
+    g.appendChild(b);d.setDate(d.getDate()+1);
+    if(i===34&&d.getMonth()!==vue.getMonth())break;
+  }
+}
+
+function reglages(){
+  document.getElementById('debut').value=R.debut;
+  ['mac','email','mdp'].forEach(c=>document.getElementById(c).value=R.box[c]||'');
+  document.getElementById('oConfort').textContent=deg(R.confort);
+  document.getElementById('oEco').textContent=deg(R.eco);
+  document.querySelectorAll('#modeCoupe button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===R.coupe));
+  const c=document.getElementById('postes');c.innerHTML='';
+  Object.keys(NOMS).forEach(p=>{
+    const div=document.createElement('div');div.className='bloc poste';div.style.borderLeftColor=COUL[p];
+    const rub=R.plages[p].filter(x=>min(x[1])>min(x[0])).map(x=>'<i style="left:'+(min(x[0])/14.4)+'%;width:'+((min(x[1])-min(x[0]))/14.4)+'%"></i>').join('');
+    div.innerHTML='<h3>'+NOMS[p]+'</h3><div class="ruban" aria-hidden="true">'+rub+'</div><div class="heures"><span>0 h</span><span>6 h</span><span>12 h</span><span>18 h</span><span>24 h</span></div>';
+    R.plages[p].forEach((x,i)=>{
+      const l=document.createElement('div');l.className='plage'+(min(x[1])<=min(x[0])?' err':'');
+      l.innerHTML='<input type="time" value="'+x[0]+'" aria-label="Allumage"><span>→</span><input type="time" value="'+x[1]+'" aria-label="Coupure"><button class="x" aria-label="Supprimer cette plage">✕</button>';
+      const[a,b]=l.querySelectorAll('input');
+      a.onchange=()=>{x[0]=a.value;fin()};b.onchange=()=>{x[1]=b.value;fin()};
+      l.querySelector('.x').onclick=()=>{R.plages[p].splice(i,1);fin()};
+      div.appendChild(l)});
+    if(R.plages[p].length<3){const add=document.createElement('button');add.className='ajout';add.textContent='Ajouter une plage';
+      add.onclick=()=>{R.plages[p].push(['18:00','22:00']);fin()};div.appendChild(add)}
+    if(R.plages[p].some(x=>min(x[1])<=min(x[0])))div.insertAdjacentHTML('beforeend','<p class="aide" style="color:var(--am)">L’heure de coupure doit être après l’allumage.</p>');
+    c.appendChild(div)});
+}
+function fin(){sauver();reglages();etat()}
+
+document.getElementById('debut').onchange=e=>{if(e.target.value){R.debut=e.target.value;sauver('Cycle recalculé');planning();etat()}};
+document.querySelectorAll('.pas button').forEach(b=>b.onclick=()=>{const t=b.dataset.t;R[t]=Math.min(28,Math.max(7,R[t]+Number(b.dataset.d)));fin()});
+document.querySelectorAll('#modeCoupe button').forEach(b=>b.onclick=()=>{R.coupe=b.dataset.m;fin()});
+['mac','email','mdp'].forEach(c=>document.getElementById(c).onchange=e=>{
+  let v=e.target.value.trim(); if(c==='mac'){v=v.replace(/[^0-9a-f]/gi,'').toUpperCase();e.target.value=v}
+  R.box[c]=v; sauver('Connexion enregistrée')});
+document.getElementById('tester').onclick=()=>{
+  const b=R.box,o=document.getElementById('etatBox');
+  if(!/^[0-9A-F]{12}$/.test(b.mac)){o.textContent='Le numéro de la box doit faire 12 caractères (chiffres et lettres A à F).';return}
+  if(!b.email||!b.mdp){o.textContent='Entre ton email et ton mot de passe Delta Dore.';return}
+  if(window.TydomNative&&TydomNative.test){o.textContent='Connexion en cours…';TydomNative.test(JSON.stringify(b))}
+  else o.textContent='Identifiants enregistrés. La connexion à la box arrive avec la prochaine version de l’APK.'};
+window.resultatTest=(ok,msg,brut)=>{document.getElementById('etatBox').textContent=(ok?'✓ ':'✕ ')+msg;
+  const bb=document.getElementById('brutBloc');bb.hidden=!brut;document.getElementById('brut').textContent=brut||''};
+document.getElementById('copier').onclick=()=>{const t=document.getElementById('brut').textContent;
+  try{navigator.clipboard.writeText(t).then(()=>sauver('Données copiées'))}catch(e){}};
+document.getElementById('raz').onclick=()=>{if(confirm('Remettre les horaires et températures d’origine ? Ton cycle et tes jours modifiés sont gardés.')){
+  const d=structuredClone(DEFAUT);R.plages=d.plages;R.confort=d.confort;R.eco=d.eco;R.coupe=d.coupe;fin()}};
+document.getElementById('prec').onclick=()=>{vue.setMonth(vue.getMonth()-1);planning()};
+document.getElementById('suiv').onclick=()=>{vue.setMonth(vue.getMonth()+1);planning()};
+function onglet(r){document.getElementById('vuePlanning').hidden=r;document.getElementById('vueReglages').hidden=!r;
+  document.getElementById('tPlanning').setAttribute('aria-selected',!r);document.getElementById('tReglages').setAttribute('aria-selected',r);
+  if(r)reglages();else planning()}
+document.getElementById('tPlanning').onclick=()=>onglet(false);
+document.getElementById('tReglages').onclick=()=>onglet(true);
+planning();etat();setInterval(etat,60000);
+</script>
+</body>
+</html>
