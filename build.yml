@@ -1,0 +1,1032 @@
+name: Construire l'APK Chauffage
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Générer le projet Android
+        run: |
+          mkdir -p "$(dirname "settings.gradle")"
+          cat > 'settings.gradle' <<'CH_EOF_0'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "Chauffage58"
+          include ':app'
+          CH_EOF_0
+          mkdir -p "$(dirname "build.gradle")"
+          cat > 'build.gradle' <<'CH_EOF_1'
+          plugins {
+              id 'com.android.application' version '8.5.2' apply false
+          }
+          CH_EOF_1
+          mkdir -p "$(dirname "gradle.properties")"
+          cat > 'gradle.properties' <<'CH_EOF_2'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          android.nonTransitiveRClass=true
+          CH_EOF_2
+          mkdir -p "$(dirname "app/build.gradle")"
+          cat > 'app/build.gradle' <<'CH_EOF_3'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'fr.hack68.chauffage'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId 'fr.hack68.chauffage'
+                  minSdk 26
+                  targetSdk 34
+                  versionCode 7
+                  versionName '2.3'
+              }
+
+              signingConfigs {
+                  fixe {
+                      storeFile file('ch.keystore')
+                      storePassword 'chauffage58'
+                      keyAlias 'chauffage'
+                      keyPassword 'chauffage58'
+                  }
+              }
+
+              buildTypes {
+                  debug { signingConfig signingConfigs.fixe }
+                  release { signingConfig signingConfigs.fixe; minifyEnabled false }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+
+          dependencies {
+              implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+          }
+          CH_EOF_3
+          mkdir -p "$(dirname "app/src/main/AndroidManifest.xml")"
+          cat > 'app/src/main/AndroidManifest.xml' <<'CH_EOF_4'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+              <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+              <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+              <application
+                  android:label="Chauffage 5×8"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher"
+                  android:theme="@android:style/Theme.Material.NoActionBar"
+                  android:allowBackup="false">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <receiver android:name=".Alarme" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.BOOT_COMPLETED" />
+                      </intent-filter>
+                  </receiver>
+              </application>
+          </manifest>
+          CH_EOF_4
+          mkdir -p "$(dirname "app/src/main/res/values/colors.xml")"
+          cat > 'app/src/main/res/values/colors.xml' <<'CH_EOF_5'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="fond_icone">#1E7FCB</color>
+          </resources>
+          CH_EOF_5
+          mkdir -p "$(dirname "app/src/main/res/drawable/ic_flamme.xml")"
+          cat > 'app/src/main/res/drawable/ic_flamme.xml' <<'CH_EOF_6'
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp" android:height="108dp"
+              android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#E8692A"
+                  android:pathData="M54,30 C60,40 70,46 70,60 C70,70 63,78 54,78 C45,78 38,70 38,60 C38,52 43,47 46,42 C47,50 50,53 53,54 C51,46 52,38 54,30 Z" />
+              <path android:fillColor="#F2C400"
+                  android:pathData="M54,54 C57,58 61,61 61,66 C61,71 58,74 54,74 C50,74 47,71 47,66 C47,62 50,59 54,54 Z" />
+          </vector>
+          CH_EOF_6
+          mkdir -p "$(dirname "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml")"
+          cat > 'app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml' <<'CH_EOF_7'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/fond_icone" />
+              <foreground android:drawable="@drawable/ic_flamme" />
+          </adaptive-icon>
+          CH_EOF_7
+          mkdir -p "$(dirname "app/src/main/java/fr/hack68/chauffage/MainActivity.java")"
+          cat > 'app/src/main/java/fr/hack68/chauffage/MainActivity.java' <<'CH_EOF_8'
+          package fr.hack68.chauffage;
+
+          import android.app.Activity;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.os.PowerManager;
+          import android.provider.Settings;
+          import android.webkit.JavascriptInterface;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import org.json.JSONObject;
+
+          public class MainActivity extends Activity {
+              private WebView web;
+
+              @Override
+              protected void onCreate(Bundle b) {
+                  super.onCreate(b);
+                  web = new WebView(this);
+                  WebSettings s = web.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  web.setWebViewClient(new WebViewClient());
+                  web.addJavascriptInterface(new Pont(), "TydomNative");
+                  setContentView(web);
+                  web.loadUrl("file:///android_asset/index.html");
+                  Pilote.planifierSuivante(getApplicationContext(), Pilote.config(this));
+                  Pilote.planifierControle(getApplicationContext(), Pilote.config(this));
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (web.canGoBack()) web.goBack(); else super.onBackPressed();
+              }
+
+              private void appelerJs(String fn, boolean ok, String msg, String brut) {
+                  final String js = "window." + fn + "&&" + fn + "(" + ok + ","
+                          + JSONObject.quote(msg) + "," + JSONObject.quote(brut == null ? "" : brut) + ")";
+                  web.post(() -> web.evaluateJavascript(js, null));
+              }
+
+              private void lire(String json, String fn) {
+                  new Thread(() -> {
+                      try {
+                          JSONObject o = new JSONObject(json);
+                          Tydom.Resultat r = Tydom.tester(getApplicationContext(), o.getString("mac"), o.getString("email"), o.getString("mdp"));
+                          appelerJs(fn, true, r.resume, r.brut);
+                      } catch (Tydom.Echec e) {
+                          appelerJs(fn, false, e.getMessage(), null);
+                      } catch (Exception e) {
+                          appelerJs(fn, false, "Erreur inattendue : " + e, null);
+                      }
+                  }).start();
+              }
+
+              private volatile boolean debugActif = false;
+              private volatile Tydom.Session debugSession = null;
+
+              private void dbg(String type, String texte) {
+                  final String js = "window.debugMsg&&debugMsg(" + JSONObject.quote(type) + "," + JSONObject.quote(texte) + ")";
+                  web.post(() -> web.evaluateJavascript(js, null));
+              }
+
+              private void debugEnvoyer(String chemin) {
+                  Tydom.Session s = debugSession;
+                  if (s == null) return;
+                  dbg("req", "GET " + chemin);
+                  s.envoyer("GET", chemin, null);
+              }
+
+              class Pont {
+                  /** Onglet Débug : connexion ouverte en continu, tout ce que dit la box est renvoyé à l’écran. */
+                  @JavascriptInterface public void debugStart(String json) {
+                      if (debugActif) return;
+                      debugActif = true;
+                      new Thread(() -> {
+                          Tydom.Session s = null;
+                          try {
+                              JSONObject o = new JSONObject(json);
+                              dbg("info", "Connexion à la box par le cloud Delta Dore…");
+                              s = Tydom.Session.ouvrir(getApplicationContext(), o.getString("mac"), o.getString("email"), o.getString("mdp"));
+                              debugSession = s;
+                              dbg("ok", "Connecté à la box");
+                              debugEnvoyer("/configs/file");
+                              debugEnvoyer("/devices/meta");
+                              debugEnvoyer("/devices/data");
+                              while (debugActif) {
+                                  String m = s.file.poll(2, java.util.concurrent.TimeUnit.SECONDS);
+                                  if (m == null) continue;
+                                  if (m.equals(Tydom.FIN)) { dbg("err", "La connexion avec la box s’est coupée."); break; }
+                                  dbg("msg", m);
+                              }
+                          } catch (Exception e) {
+                              dbg("err", String.valueOf(e.getMessage()));
+                          } finally {
+                              debugSession = null;
+                              if (s != null) s.close();
+                              debugActif = false;
+                              dbg("fin", "Écoute arrêtée");
+                          }
+                      }).start();
+                  }
+
+                  @JavascriptInterface public void debugStop() { debugActif = false; }
+
+                  @JavascriptInterface public void debugRelire() {
+                      new Thread(() -> debugEnvoyer("/devices/data")).start();
+                  }
+
+                  @JavascriptInterface public void test(String json) { lire(json, "resultatTest"); }
+                  @JavascriptInterface public void etat(String json) { lire(json, "etatBoxRecu"); }
+
+                  /** Reçoit tous les réglages de l’écran et reprogramme le pilotage. */
+                  @JavascriptInterface public void config(String json) {
+                      Pilote.prefs(MainActivity.this).edit().putString("cfg", json).apply();
+                      Pilote.synchroniser(getApplicationContext());
+                      Pilote.planifierControle(getApplicationContext(), Pilote.config(MainActivity.this));
+                  }
+
+                  /** Bouton Allumer / Couper maintenant. */
+                  @JavascriptInterface public void forcer(String json, boolean allume) {
+                      new Thread(() -> {
+                          try {
+                              JSONObject cfg = new JSONObject(json);
+                              String r = Tydom.appliquer(getApplicationContext(), cfg, allume);
+                              Pilote.noterForcage(getApplicationContext(), cfg);
+                              Pilote.journal(getApplicationContext(), (allume ? "🔥 Allumé à la main" : "❄️ Coupé à la main") + " · " + r);
+                              appelerJs("actionRecu", true, allume ? "Chauffage allumé" : "Chauffage coupé", null);
+                          } catch (Exception e) {
+                              Pilote.journal(getApplicationContext(), "⚠️ Commande à la main ratée · " + e.getMessage());
+                              appelerJs("actionRecu", false, String.valueOf(e.getMessage()), null);
+                          }
+                      }).start();
+                  }
+
+                  @JavascriptInterface public String prochain() { return Pilote.prefs(MainActivity.this).getString("prochain", ""); }
+                  /** Tarif modifié : on enregistre la config sans relancer de synchro du chauffage. */
+                  @JavascriptInterface public void tarif(String json) {
+                      Pilote.prefs(MainActivity.this).edit().putString("cfg", json).apply();
+                  }
+
+                  @JavascriptInterface public String energie() { return Energie.prefs(MainActivity.this).getString("data", "{}"); }
+                  @JavascriptInterface public String controle() { return Pilote.prefs(MainActivity.this).getString("controle", ""); }
+                  @JavascriptInterface public String journal() { return Pilote.prefs(MainActivity.this).getString("journal", ""); }
+
+                  @JavascriptInterface public boolean batterieOk() {
+                      PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+                      return pm.isIgnoringBatteryOptimizations(getPackageName());
+                  }
+
+                  @JavascriptInterface public void autoriserBatterie() {
+                      Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName()));
+                      try { startActivity(i); } catch (Exception e) { startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)); }
+                  }
+
+                  @JavascriptInterface public boolean reveilsOk() {
+                      if (Build.VERSION.SDK_INT < 31) return true;
+                      return ((android.app.AlarmManager) getSystemService(ALARM_SERVICE)).canScheduleExactAlarms();
+                  }
+              }
+          }
+          CH_EOF_8
+          mkdir -p "$(dirname "app/src/main/java/fr/hack68/chauffage/Tydom.java")"
+          cat > 'app/src/main/java/fr/hack68/chauffage/Tydom.java' <<'CH_EOF_9'
+          package fr.hack68.chauffage;
+
+          import android.content.Context;
+          import android.content.SharedPreferences;
+          import java.nio.charset.StandardCharsets;
+          import java.security.MessageDigest;
+          import java.security.SecureRandom;
+          import java.text.Normalizer;
+          import java.util.HashMap;
+          import java.util.Map;
+          import java.util.concurrent.CountDownLatch;
+          import java.util.concurrent.LinkedBlockingQueue;
+          import java.util.concurrent.TimeUnit;
+          import java.util.regex.Matcher;
+          import java.util.regex.Pattern;
+          import okhttp3.MultipartBody;
+          import okhttp3.OkHttpClient;
+          import okhttp3.Request;
+          import okhttp3.Response;
+          import okhttp3.WebSocket;
+          import okhttp3.WebSocketListener;
+          import okio.ByteString;
+          import org.json.JSONArray;
+          import org.json.JSONObject;
+
+          /** Connexion à la box Tydom via le cloud Delta Dore (mediation.tydom.com). */
+          public class Tydom {
+              static final String HOTE = "mediation.tydom.com";
+              static final String OPENID = "https://deltadoreadb2ciot.b2clogin.com/deltadoreadb2ciot.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=B2C_1_AccountProviderROPC_SignIn";
+              static final String CLIENT_ID = "8782839f-3264-472a-ab87-4d4e23524da4";
+              static final String SCOPE = "openid profile offline_access https://deltadoreadb2ciot.onmicrosoft.com/iotapi/sites_management_gateway_credentials";
+              static final String SITES = "https://prod.iotdeltadore.com/sitesmanagement/api/v1/sites?gateway_mac=";
+              static final String FIN = "\u0000FIN";
+
+              static class Echec extends Exception { Echec(String m) { super(m); } }
+              static class Refus extends Exception { }
+              static class Resultat { String resume; String brut; }
+
+              static final OkHttpClient HTTP = new OkHttpClient.Builder()
+                      .connectTimeout(15, TimeUnit.SECONDS).readTimeout(20, TimeUnit.SECONDS)
+                      .pingInterval(30, TimeUnit.SECONDS).build();
+
+              /** Compte Delta Dore -> mot de passe de la box. */
+              static String motDePasseBox(String email, String mdp, String mac) throws Exception {
+                  String endpoint;
+                  try (Response r = HTTP.newCall(new Request.Builder().url(OPENID).build()).execute()) {
+                      endpoint = new JSONObject(r.body().string()).getString("token_endpoint");
+                  } catch (Exception e) { throw new Echec("Pas de réponse du serveur Delta Dore. Vérifie ta connexion Internet."); }
+
+                  MultipartBody corps = new MultipartBody.Builder().setType(MultipartBody.FORM)
+                          .addFormDataPart("username", email).addFormDataPart("password", mdp)
+                          .addFormDataPart("grant_type", "password").addFormDataPart("client_id", CLIENT_ID)
+                          .addFormDataPart("scope", SCOPE).build();
+                  String jeton;
+                  try (Response r = HTTP.newCall(new Request.Builder().url(endpoint).post(corps).build()).execute()) {
+                      jeton = new JSONObject(r.body().string()).optString("access_token", "");
+                  }
+                  if (jeton.isEmpty()) throw new Echec("Email ou mot de passe Delta Dore refusé.");
+
+                  try (Response r = HTTP.newCall(new Request.Builder().url(SITES + mac)
+                          .header("Authorization", "Bearer " + jeton).build()).execute()) {
+                      JSONArray sites = new JSONObject(r.body().string()).optJSONArray("sites");
+                      if (sites != null && sites.length() > 0) {
+                          JSONObject gw = sites.getJSONObject(0).optJSONObject("gateway");
+                          if (gw != null && gw.has("password")) return gw.getString("password");
+                      }
+                  }
+                  throw new Echec("Connexion au compte OK, mais aucune box avec ce numéro. Vérifie le numéro sous la box.");
+              }
+
+              static String md5(String s) throws Exception {
+                  byte[] d = MessageDigest.getInstance("MD5").digest(s.getBytes(StandardCharsets.UTF_8));
+                  StringBuilder sb = new StringBuilder();
+                  for (byte b : d) sb.append(String.format("%02x", b));
+                  return sb.toString();
+              }
+
+              static String hexAleatoire(int n) {
+                  byte[] b = new byte[n]; new SecureRandom().nextBytes(b);
+                  StringBuilder sb = new StringBuilder();
+                  for (byte x : b) sb.append(String.format("%02x", x));
+                  return sb.toString();
+              }
+
+              static String authDigest(String mac, String mdpBox, String uri) throws Exception {
+                  Request defi = new Request.Builder().url("https://" + HOTE + uri)
+                          .header("Connection", "Upgrade").header("Upgrade", "websocket")
+                          .header("Sec-WebSocket-Key", android.util.Base64.encodeToString(hexAleatoire(8).getBytes(), android.util.Base64.NO_WRAP))
+                          .header("Sec-WebSocket-Version", "13").build();
+                  String www;
+                  try (Response r = HTTP.newCall(defi).execute()) { www = r.header("WWW-Authenticate", ""); }
+                  if (www == null || !www.startsWith("Digest")) throw new Echec("La box ne répond pas sur le cloud. Vérifie qu’elle est branchée et connectée à ta box internet.");
+                  Map<String, String> p = new HashMap<>();
+                  Matcher m = Pattern.compile("(\\w+)=\"?([^\",]*)\"?").matcher(www);
+                  while (m.find()) p.put(m.group(1), m.group(2));
+                  String realm = p.getOrDefault("realm", ""), nonce = p.getOrDefault("nonce", "");
+                  String nc = "00000001", cnonce = hexAleatoire(8);
+                  String ha1 = md5(mac + ":" + realm + ":" + mdpBox), ha2 = md5("GET:" + uri);
+                  String rep = md5(ha1 + ":" + nonce + ":" + nc + ":" + cnonce + ":auth:" + ha2);
+                  return "Digest username=\"" + mac + "\", realm=\"" + realm + "\", nonce=\"" + nonce + "\", uri=\"" + uri
+                          + "\", response=\"" + rep + "\", qop=auth, nc=" + nc + ", cnonce=\"" + cnonce + "\"";
+              }
+
+              /** Extrait le corps d’une réponse HTTP brute (gère le mode chunked). */
+              static String corps(String brut) {
+                  if (brut.startsWith("\u0002")) brut = brut.substring(1);
+                  int i = brut.indexOf("\r\n\r\n");
+                  if (i < 0) return "";
+                  String tetes = brut.substring(0, i).toLowerCase(), c = brut.substring(i + 4);
+                  if (!tetes.contains("chunked")) return c.trim();
+                  StringBuilder sb = new StringBuilder();
+                  int pos = 0;
+                  while (pos < c.length()) {
+                      int fin = c.indexOf("\r\n", pos);
+                      if (fin < 0) break;
+                      int taille;
+                      try { taille = Integer.parseInt(c.substring(pos, fin).trim(), 16); } catch (Exception e) { break; }
+                      if (taille == 0) break;
+                      int deb = fin + 2;
+                      if (deb + taille > c.length()) { sb.append(c.substring(deb)); break; }
+                      sb.append(c, deb, deb + taille);
+                      pos = deb + taille + 2;
+                  }
+                  return sb.toString().trim();
+              }
+
+              /** Une connexion ouverte avec la box. */
+              static class Session implements AutoCloseable {
+                  final LinkedBlockingQueue<String> file = new LinkedBlockingQueue<>();
+                  WebSocket ws;
+                  int transac = 0;
+
+                  static Session ouvrir(Context ctx, String mac, String email, String mdp) throws Exception {
+                      SharedPreferences sp = ctx.getSharedPreferences("tydom", Context.MODE_PRIVATE);
+                      String pw = sp.getString("gw_" + mac, null);
+                      for (int essai = 0; essai < 2; essai++) {
+                          if (pw == null) {
+                              pw = motDePasseBox(email, mdp, mac);
+                              sp.edit().putString("gw_" + mac, pw).apply();
+                          }
+                          try {
+                              return connecter(mac, pw);
+                          } catch (Refus r) {
+                              pw = null;
+                              sp.edit().remove("gw_" + mac).apply();
+                          }
+                      }
+                      throw new Echec("La box a refusé la connexion.");
+                  }
+
+                  static Session connecter(String mac, String pw) throws Exception {
+                      String uri = "/mediation/client?mac=" + mac + "&appli=1";
+                      String auth = authDigest(mac, pw, uri);
+                      final Session s = new Session();
+                      final CountDownLatch ouvert = new CountDownLatch(1);
+                      final boolean[] refus = {false};
+                      final String[] erreur = {null};
+                      s.ws = HTTP.newWebSocket(new Request.Builder().url("wss://" + HOTE + uri)
+                              .header("Authorization", auth).build(), new WebSocketListener() {
+                          @Override public void onOpen(WebSocket w, Response r) { ouvert.countDown(); }
+                          @Override public void onMessage(WebSocket w, ByteString b) { s.file.add(b.utf8()); }
+                          @Override public void onMessage(WebSocket w, String t) { s.file.add(t); }
+                          @Override public void onFailure(WebSocket w, Throwable t, Response r) {
+                              if (r != null && r.code() == 401) refus[0] = true;
+                              erreur[0] = String.valueOf(t.getMessage());
+                              s.file.add(FIN);
+                              ouvert.countDown();
+                          }
+                      });
+                      if (!ouvert.await(20, TimeUnit.SECONDS)) { s.close(); throw new Echec("La box ne répond pas (délai dépassé)."); }
+                      if (refus[0]) throw new Refus();
+                      if (erreur[0] != null) throw new Echec("Connexion à la box impossible : " + erreur[0]);
+                      return s;
+                  }
+
+                  /** Envoie une requête sans attendre la réponse. */
+                  void envoyer(String methode, String chemin, String body) {
+                      transac++;
+                      byte[] b = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
+                      String req = "\u0002" + methode + " " + chemin + " HTTP/1.1\r\nContent-Length: " + b.length
+                              + "\r\nContent-Type: application/json; charset=UTF-8\r\nTransac-Id: " + transac + "\r\n\r\n"
+                              + (body == null ? "" : body + "\r\n\r\n");
+                      ws.send(ByteString.encodeUtf8(req));
+                  }
+
+                  /** Envoie une requête et renvoie le corps de la réponse. */
+                  String demander(String methode, String chemin, String body) throws Exception {
+                      envoyer(methode, chemin, body);
+                      long limite = System.currentTimeMillis() + 15000;
+                      while (true) {
+                          long reste = limite - System.currentTimeMillis();
+                          String msg = reste > 0 ? file.poll(reste, TimeUnit.MILLISECONDS) : null;
+                          if (msg == null) throw new Echec("La box n’a pas répondu à " + chemin + ".");
+                          if (msg.equals(FIN)) throw new Echec("Connexion à la box coupée.");
+                          String m = msg.startsWith("\u0002") ? msg.substring(1) : msg;
+                          if (!m.startsWith("HTTP/")) continue; // message spontané de la box
+                          String ligne = m.substring(0, Math.max(0, m.indexOf("\r\n")));
+                          String[] parts = ligne.split(" ");
+                          if (parts.length > 1 && !parts[1].startsWith("2"))
+                              throw new Echec("La box a répondu " + parts[1] + " à " + methode + " " + chemin + ".");
+                          return corps(m);
+                      }
+                  }
+
+                  @Override public void close() { try { ws.close(1000, "fin"); } catch (Exception ignore) { } }
+              }
+
+              /** Lit toutes les valeurs connues des appareils (nom -> valeur, premier trouvé). */
+              static Map<String, Object> valeurs(String devicesJson) {
+                  Map<String, Object> v = new HashMap<>();
+                  try {
+                      JSONArray devs = new JSONArray(devicesJson);
+                      for (int i = 0; i < devs.length(); i++) {
+                          JSONArray eps = devs.getJSONObject(i).optJSONArray("endpoints");
+                          if (eps == null) continue;
+                          for (int j = 0; j < eps.length(); j++) {
+                              JSONArray data = eps.getJSONObject(j).optJSONArray("data");
+                              if (data == null) continue;
+                              for (int k = 0; k < data.length(); k++) {
+                                  JSONObject d = data.getJSONObject(k);
+                                  if (!v.containsKey(d.optString("name"))) v.put(d.optString("name"), d.opt("value"));
+                              }
+                          }
+                      }
+                  } catch (Exception ignore) { }
+                  return v;
+              }
+
+              /** Test complet : connexion + lecture de l’état (config, données, valeurs possibles). */
+              static Resultat tester(Context ctx, String mac, String email, String mdp) throws Exception {
+                  try (Session s = Session.ouvrir(ctx, mac, email, mdp)) {
+                      JSONObject recu = new JSONObject();
+                      try { recu.put("config", new JSONObject(s.demander("GET", "/configs/file", null))); } catch (Exception ignore) { }
+                      String data = s.demander("GET", "/devices/data", null);
+                      recu.put("devices", new JSONArray(data));
+                      Energie.noter(ctx, valeurs(data), Pilote.config(ctx));
+                      try { recu.put("meta", new JSONArray(s.demander("GET", "/devices/meta", null))); } catch (Exception ignore) { }
+                      Map<String, Object> v = valeurs(data);
+                      StringBuilder sb = new StringBuilder("Connecté à la box.");
+                      if (v.containsKey("thermicLevel")) sb.append(" Mode : ").append(v.get("thermicLevel")).append(".");
+                      if (v.get("temperature") instanceof Number) sb.append(" Pièce : ").append(v.get("temperature")).append(" °C.");
+                      Resultat res = new Resultat();
+                      res.resume = sb.toString();
+                      res.brut = recu.toString(2);
+                      return res;
+                  }
+              }
+
+              static String normaliser(String s) {
+                  return Normalizer.normalize(s == null ? "" : s, Normalizer.Form.NFD)
+                          .replaceAll("\\p{M}", "").trim().toLowerCase();
+              }
+
+              static String lireMode(Session s) throws Exception {
+                  Map<String, Object> v = valeurs(s.demander("GET", "/devices/data", null));
+                  return v.get("authorization") + "/" + v.get("thermicLevel");
+              }
+
+              /**
+               * Met le chauffage en Confort (allume=true) ou en Éco (allume=false).
+               * 1) lance le scénario Delta Dore (Brûlant / Froid), 2) si la box n’a pas changé de mode, commande directe.
+               */
+              static String appliquer(Context ctx, JSONObject cfg, boolean allume) throws Exception {
+                  JSONObject box = cfg.getJSONObject("box");
+                  String nomScen = allume ? cfg.optString("scenOn", "Brûlant") : cfg.optString("scenOff", "Froid");
+                  String attendu = allume ? "COMFORT" : "ECO";
+                  try (Session s = Session.ouvrir(ctx, box.getString("mac"), box.getString("email"), box.getString("mdp"))) {
+                      String mode = "?";
+                      // 1) Scénario
+                      try {
+                          JSONObject conf = new JSONObject(s.demander("GET", "/configs/file", null));
+                          JSONArray scens = conf.optJSONArray("scenarios");
+                          long id = -1;
+                          for (int i = 0; scens != null && i < scens.length(); i++)
+                              if (normaliser(scens.getJSONObject(i).optString("name")).equals(normaliser(nomScen)))
+                                  id = scens.getJSONObject(i).getLong("id");
+                          if (id >= 0) {
+                              s.demander("PUT", "/scenarios/" + id, null);
+                              for (int i = 0; i < 3; i++) {
+                                  Thread.sleep(3000);
+                                  mode = lireMode(s);
+                                  if (mode.endsWith(attendu)) return "scénario « " + nomScen + " » (" + mode + ")";
+                              }
+                          }
+                      } catch (Exception ignore) { }
+                      // 2) Commande directe sur l’appareil qui a un thermicLevel
+                      JSONArray devs = new JSONArray(s.demander("GET", "/devices/data", null));
+                      long dev = -1, ep = -1;
+                      for (int i = 0; i < devs.length() && dev < 0; i++) {
+                          JSONArray eps = devs.getJSONObject(i).optJSONArray("endpoints");
+                          for (int j = 0; eps != null && j < eps.length(); j++) {
+                              JSONArray data = eps.getJSONObject(j).optJSONArray("data");
+                              for (int k = 0; data != null && k < data.length(); k++)
+                                  if ("thermicLevel".equals(data.getJSONObject(k).optString("name"))) {
+                                      dev = devs.getJSONObject(i).getLong("id");
+                                      ep = eps.getJSONObject(j).getLong("id");
+                                  }
+                          }
+                      }
+                      if (dev < 0) throw new Echec("Aucun chauffage pilotable trouvé sur la box.");
+                      // authorization est en lecture seule (voir /devices/meta) : on n’envoie que le mode
+                      String body = "[{\"name\":\"thermicLevel\",\"value\":\"" + attendu + "\"}]";
+                      s.demander("PUT", "/devices/" + dev + "/endpoints/" + ep + "/data", body);
+                      for (int i = 0; i < 3; i++) {
+                          Thread.sleep(3000);
+                          mode = lireMode(s);
+                          if (mode.endsWith(attendu)) return "commande directe (" + mode + ")";
+                      }
+                      throw new Echec("Ordre envoyé, mais la box indique encore " + mode + ".");
+                  }
+              }
+          }
+          CH_EOF_9
+          mkdir -p "$(dirname "app/src/main/java/fr/hack68/chauffage/Planif.java")"
+          cat > 'app/src/main/java/fr/hack68/chauffage/Planif.java' <<'CH_EOF_10'
+          package fr.hack68.chauffage;
+
+          import java.time.LocalDate;
+          import java.time.LocalDateTime;
+          import java.time.temporal.ChronoUnit;
+          import java.util.ArrayList;
+          import java.util.List;
+          import org.json.JSONArray;
+          import org.json.JSONObject;
+
+          /** Calcule le poste du jour (cycle 5×8) et les heures d’allumage, comme l’écran Planning. */
+          public class Planif {
+              static final String[] CYCLE = {"M", "M", "A", "A", "N1", "N2", "R", "R", "R", "R"};
+
+              static String poste(JSONObject cfg, LocalDate d) {
+                  JSONObject ov = cfg.optJSONObject("overrides");
+                  if (ov != null && ov.has(d.toString())) return "R";
+                  LocalDate debut = LocalDate.parse(cfg.optString("debut", "2026-11-04"));
+                  long n = ChronoUnit.DAYS.between(debut, d);
+                  return CYCLE[(int) (((n % 10) + 10) % 10)];
+              }
+
+              static int minutes(String hhmm) {
+                  String[] p = hhmm.split(":");
+                  return Integer.parseInt(p[0]) * 60 + Integer.parseInt(p[1]);
+              }
+
+              static List<int[]> plages(JSONObject cfg, String poste) {
+                  List<int[]> l = new ArrayList<>();
+                  JSONObject pl = cfg.optJSONObject("plages");
+                  JSONArray a = pl == null ? null : pl.optJSONArray(poste);
+                  for (int i = 0; a != null && i < a.length(); i++) {
+                      JSONArray x = a.optJSONArray(i);
+                      if (x == null) continue;
+                      try {
+                          int d = minutes(x.getString(0)), f = minutes(x.getString(1));
+                          if (f > d) l.add(new int[]{d, f});
+                      } catch (Exception ignore) { }
+                  }
+                  return l;
+              }
+
+              static boolean allumeA(JSONObject cfg, LocalDateTime t) {
+                  int m = t.getHour() * 60 + t.getMinute();
+                  for (int[] p : plages(cfg, poste(cfg, t.toLocalDate())))
+                      if (m >= p[0] && m < p[1]) return true;
+                  return false;
+              }
+
+              /** Prochaine heure (après t) où l’état allumé/coupé change. */
+              static LocalDateTime prochaine(JSONObject cfg, LocalDateTime t) {
+                  boolean actuel = allumeA(cfg, t);
+                  LocalDateTime meilleur = null;
+                  for (int j = 0; j < 12 && meilleur == null; j++) {
+                      LocalDate d = t.toLocalDate().plusDays(j);
+                      List<Integer> bornes = new ArrayList<>();
+                      for (int[] p : plages(cfg, poste(cfg, d))) { bornes.add(p[0]); bornes.add(p[1]); }
+                      bornes.add(0);
+                      bornes.sort(null);
+                      for (int b : bornes) {
+                          LocalDateTime dt = d.atStartOfDay().plusMinutes(b);
+                          if (!dt.isAfter(t)) continue;
+                          if (allumeA(cfg, dt) != actuel) { meilleur = dt; break; }
+                      }
+                  }
+                  return meilleur;
+              }
+          }
+          CH_EOF_10
+          mkdir -p "$(dirname "app/src/main/java/fr/hack68/chauffage/Pilote.java")"
+          cat > 'app/src/main/java/fr/hack68/chauffage/Pilote.java' <<'CH_EOF_11'
+          package fr.hack68.chauffage;
+
+          import android.app.AlarmManager;
+          import android.app.PendingIntent;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.os.Build;
+          import java.time.LocalDateTime;
+          import java.time.ZoneId;
+          import java.time.format.DateTimeFormatter;
+          import java.util.Map;
+          import org.json.JSONObject;
+
+          /** Exécute les ordres et programme le prochain réveil. */
+          public class Pilote {
+              static final String ACTION = "fr.hack68.chauffage.PILOTE";
+              static final String CONTROLE = "fr.hack68.chauffage.CONTROLE";
+              static final long INTERVALLE_CONTROLE = 30 * 60 * 1000L;
+              static final DateTimeFormatter HEURE = DateTimeFormatter.ofPattern("HH:mm");
+              static final DateTimeFormatter JOUR_HEURE = DateTimeFormatter.ofPattern("dd/MM HH:mm");
+
+              static SharedPreferences prefs(Context c) { return c.getSharedPreferences("pilote", Context.MODE_PRIVATE); }
+
+              static JSONObject config(Context c) {
+                  try { return new JSONObject(prefs(c).getString("cfg", "{}")); } catch (Exception e) { return new JSONObject(); }
+              }
+
+              static boolean actif(JSONObject cfg) {
+                  JSONObject b = cfg.optJSONObject("box");
+                  return cfg.optBoolean("auto", false) && b != null
+                          && b.optString("mac").length() == 12 && !b.optString("email").isEmpty() && !b.optString("mdp").isEmpty();
+              }
+
+              static synchronized void journal(Context c, String msg) {
+                  String ligne = LocalDateTime.now().format(JOUR_HEURE) + "  " + msg;
+                  String ancien = prefs(c).getString("journal", "");
+                  String[] l = (ligne + "\n" + ancien).split("\n");
+                  StringBuilder sb = new StringBuilder();
+                  for (int i = 0; i < Math.min(30, l.length); i++) if (!l[i].isEmpty()) sb.append(l[i]).append("\n");
+                  prefs(c).edit().putString("journal", sb.toString()).apply();
+              }
+
+              /** Appelé par le réveil : applique l’état voulu maintenant, puis programme le suivant. */
+              static void executer(Context c) {
+                  JSONObject cfg = config(c);
+                  if (!actif(cfg)) { annuler(c); return; }
+                  LocalDateTime now = LocalDateTime.now();
+                  boolean allume = Planif.allumeA(cfg, now);
+                  int essai = prefs(c).getInt("essai", 0);
+                  try {
+                      String r = Tydom.appliquer(c, cfg, allume);
+                      journal(c, (allume ? "🔥 Allumé" : "❄️ Coupé") + " · " + r);
+                      prefs(c).edit().putInt("essai", 0).putLong("forceJusqua", 0).apply();
+                      planifierSuivante(c, cfg);
+                  } catch (Exception e) {
+                      journal(c, "⚠️ " + (allume ? "Allumage" : "Coupure") + " raté · " + e.getMessage());
+                      if (essai < 3) {
+                          prefs(c).edit().putInt("essai", essai + 1).apply();
+                          reveil(c, System.currentTimeMillis() + 120000);
+                          prefs(c).edit().putString("prochain", "Nouvel essai à " + now.plusMinutes(2).format(HEURE)).apply();
+                      } else {
+                          prefs(c).edit().putInt("essai", 0).apply();
+                          planifierSuivante(c, cfg);
+                      }
+                  }
+              }
+
+              static void planifierSuivante(Context c, JSONObject cfg) {
+                  if (!actif(cfg)) { annuler(c); return; }
+                  LocalDateTime t = Planif.prochaine(cfg, LocalDateTime.now());
+                  planifierControle(c, cfg);
+                  if (t == null) { prefs(c).edit().putString("prochain", "Aucun changement prévu").apply(); return; }
+                  long ms = t.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() + 5000;
+                  reveil(c, ms);
+                  boolean allume = Planif.allumeA(cfg, t);
+                  String quand = t.toLocalDate().equals(LocalDateTime.now().toLocalDate()) ? t.format(HEURE)
+                          : (t.toLocalDate().equals(LocalDateTime.now().toLocalDate().plusDays(1)) ? "demain " + t.format(HEURE) : t.format(JOUR_HEURE));
+                  prefs(c).edit().putString("prochain", (allume ? "🔥 Allumage" : "❄️ Coupure") + " " + quand).apply();
+              }
+
+              /** Après un changement de réglages : remet l’état voulu dans 15 s. */
+              static void synchroniser(Context c) {
+                  if (!actif(config(c))) { annuler(c); prefs(c).edit().putString("prochain", "").apply(); return; }
+                  prefs(c).edit().putInt("essai", 0).putLong("forceJusqua", 0).putString("prochain", "Synchronisation dans quelques secondes").apply();
+                  reveil(c, System.currentTimeMillis() + 15000);
+              }
+
+              static PendingIntent intention(Context c) {
+                  Intent i = new Intent(c, Alarme.class).setAction(ACTION);
+                  return PendingIntent.getBroadcast(c, 1, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+              }
+
+              static void reveil(Context c, long ms) {
+                  AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+                  PendingIntent pi = intention(c);
+                  if (Build.VERSION.SDK_INT >= 31 && !am.canScheduleExactAlarms())
+                      am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, ms, pi);
+                  else
+                      am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, ms, pi);
+              }
+
+              static void annuler(Context c) {
+                  AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+                  am.cancel(intention(c));
+                  am.cancel(intentionControle(c));
+              }
+
+              /* ===== Correction automatique : contrôle de la box toutes les 30 min ===== */
+
+              static boolean correctionActive(JSONObject cfg) { return actif(cfg) && cfg.optBoolean("correction", true); }
+
+              static boolean boxOk(JSONObject cfg) {
+                  JSONObject b = cfg.optJSONObject("box");
+                  return b != null && b.optString("mac").length() == 12 && !b.optString("email").isEmpty() && !b.optString("mdp").isEmpty();
+              }
+
+              static PendingIntent intentionControle(Context c) {
+                  Intent i = new Intent(c, Alarme.class).setAction(CONTROLE);
+                  return PendingIntent.getBroadcast(c, 2, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+              }
+
+              static void planifierControle(Context c, JSONObject cfg) {
+                  AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+                  if (!boxOk(cfg)) { am.cancel(intentionControle(c)); return; }
+                  am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + INTERVALLE_CONTROLE, intentionControle(c));
+              }
+
+              /** Après un Allumer / Couper à la main : pas de correction jusqu’au prochain ordre du planning. */
+              static void noterForcage(Context c, JSONObject cfg) {
+                  LocalDateTime t = Planif.prochaine(cfg, LocalDateTime.now());
+                  long jusqua = t == null ? System.currentTimeMillis() + 12 * 3600000L
+                          : t.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                  prefs(c).edit().putLong("forceJusqua", jusqua).apply();
+              }
+
+              static String lisible(String mode) {
+                  String m = mode == null ? "" : mode.substring(mode.lastIndexOf('/') + 1);
+                  switch (m) {
+                      case "COMFORT": return "Confort";
+                      case "ECO": return "Éco";
+                      case "AUTO": return "Auto";
+                      case "ANTI_FROST": return "Hors-gel";
+                      case "STOP": return "Arrêt";
+                      default: return m;
+                  }
+              }
+
+              /** Toutes les 30 min : relevé du Tywatt (s’il y en a un) + correction du mode si besoin. */
+              static void controler(Context c) {
+                  JSONObject cfg = config(c);
+                  planifierControle(c, cfg);
+                  if (!boxOk(cfg)) return;
+                  String heure = LocalDateTime.now().format(HEURE);
+                  Map<String, Object> v;
+                  JSONObject box = cfg.optJSONObject("box");
+                  try (Tydom.Session s = Tydom.Session.ouvrir(c, box.optString("mac"), box.optString("email"), box.optString("mdp"))) {
+                      v = Tydom.valeurs(s.demander("GET", "/devices/data", null));
+                  } catch (Exception e) {
+                      if (correctionActive(cfg)) prefs(c).edit().putString("controle", "⚠️ Contrôle de " + heure + " : box injoignable").apply();
+                      return;
+                  }
+                  Energie.noter(c, v, cfg);
+                  if (!correctionActive(cfg)) return;
+                  if (System.currentTimeMillis() < prefs(c).getLong("forceJusqua", 0)) {
+                      prefs(c).edit().putString("controle", "Pas de contrôle à " + heure + " : forçage à la main en cours").apply();
+                      return;
+                  }
+                  boolean allume = Planif.allumeA(cfg, LocalDateTime.now());
+                  String attendu = allume ? "COMFORT" : "ECO";
+                  String mode = v.get("authorization") + "/" + v.get("thermicLevel");
+                  if (mode.endsWith(attendu) && !mode.startsWith("STOP")) {
+                      prefs(c).edit().putString("controle", "✓ Contrôlé à " + heure + " : tout est conforme").apply();
+                      return;
+                  }
+                  try {
+                      String r = Tydom.appliquer(c, cfg, allume);
+                      journal(c, "🔧 Corrigé tout seul (la box était en " + lisible(mode) + ") · " + r);
+                      prefs(c).edit().putString("controle", "🔧 Corrigé à " + heure + " (la box était en " + lisible(mode) + ")").apply();
+                  } catch (Exception e) {
+                      journal(c, "⚠️ Correction ratée · " + e.getMessage());
+                      prefs(c).edit().putString("controle", "⚠️ Correction ratée à " + heure).apply();
+                  }
+              }
+          }
+          CH_EOF_11
+          mkdir -p "$(dirname "app/src/main/java/fr/hack68/chauffage/Alarme.java")"
+          cat > 'app/src/main/java/fr/hack68/chauffage/Alarme.java' <<'CH_EOF_12'
+          package fr.hack68.chauffage;
+
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
+          import android.content.Intent;
+
+          /** Réveil programmé (et redémarrage du téléphone). */
+          public class Alarme extends BroadcastReceiver {
+              @Override
+              public void onReceive(Context ctx, Intent intent) {
+                  final Context c = ctx.getApplicationContext();
+                  if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+                      Pilote.synchroniser(c);
+                      return;
+                  }
+                  final boolean controle = Pilote.CONTROLE.equals(intent.getAction());
+                  final PendingResult pr = goAsync();
+                  new Thread(() -> {
+                      try {
+                          if (controle) Pilote.controler(c); else Pilote.executer(c);
+                      } finally { pr.finish(); }
+                  }).start();
+              }
+          }
+          CH_EOF_12
+          mkdir -p "$(dirname "app/src/main/java/fr/hack68/chauffage/Energie.java")"
+          cat > 'app/src/main/java/fr/hack68/chauffage/Energie.java' <<'CH_EOF_13'
+          package fr.hack68.chauffage;
+
+          import android.content.Context;
+          import android.content.SharedPreferences;
+          import java.time.LocalDateTime;
+          import java.time.temporal.ChronoUnit;
+          import java.util.ArrayList;
+          import java.util.Collections;
+          import java.util.Iterator;
+          import java.util.List;
+          import java.util.Map;
+          import org.json.JSONArray;
+          import org.json.JSONObject;
+
+          /**
+           * Relevés du Tywatt : à chaque lecture de la box, on note l’index du compteur (Wh).
+           * La différence entre deux relevés = la conso, rangée par jour en heures pleines / creuses.
+           */
+          public class Energie {
+              static SharedPreferences prefs(Context c) { return c.getSharedPreferences("energie", Context.MODE_PRIVATE); }
+
+              static synchronized void noter(Context c, Map<String, Object> v, JSONObject cfg) {
+                  try {
+                      String champIdx = null, champInst = null;
+                      double idx = 0, inst = 0;
+                      for (Map.Entry<String, Object> e : v.entrySet()) {
+                          if (!(e.getValue() instanceof Number)) continue;
+                          String n = e.getKey(), l = n.toLowerCase();
+                          double d = ((Number) e.getValue()).doubleValue();
+                          if (l.startsWith("energyindex") || l.startsWith("energytotindex")) {
+                              if (champIdx == null || l.contains("watt")) { champIdx = n; idx = d; }
+                          } else if (l.startsWith("energyinstant")) {
+                              if (champInst == null || n.endsWith("P")) { champInst = n; inst = d; }
+                          }
+                      }
+                      if (champIdx == null && champInst == null) return;
+                      JSONObject e = new JSONObject(prefs(c).getString("data", "{}"));
+                      LocalDateTime now = LocalDateTime.now();
+                      e.put("maj", now.toString());
+                      if (champInst != null) { e.put("instant", inst); e.put("champInstant", champInst); }
+                      if (champIdx != null) {
+                          e.put("champ", champIdx);
+                          JSONObject der = e.optJSONObject("dernier");
+                          if (der != null && champIdx.equals(der.optString("champ"))) {
+                              double delta = idx - der.getDouble("idx");
+                              LocalDateTime t0 = LocalDateTime.parse(der.getString("t"));
+                              long sec = ChronoUnit.SECONDS.between(t0, now);
+                              if (delta >= 0 && sec > 0 && delta < sec * 30.0) { // garde-fou : moins de 108 kW de moyenne
+                                  LocalDateTime milieu = t0.plusSeconds(sec / 2);
+                                  boolean hc = heureCreuse(cfg, milieu);
+                                  String jour = milieu.toLocalDate().toString();
+                                  JSONObject jours = e.optJSONObject("jours");
+                                  if (jours == null) jours = new JSONObject();
+                                  JSONObject j = jours.optJSONObject(jour);
+                                  if (j == null) j = new JSONObject();
+                                  String cle = hc ? "hc" : "hp";
+                                  j.put(cle, j.optDouble(cle, 0) + delta);
+                                  j.put("poste", Planif.poste(cfg, milieu.toLocalDate()));
+                                  jours.put(jour, j);
+                                  purger(jours);
+                                  e.put("jours", jours);
+                              }
+                          }
+                          JSONObject d = new JSONObject();
+                          d.put("champ", champIdx); d.put("idx", idx); d.put("t", now.toString());
+                          e.put("dernier", d);
+                      }
+                      prefs(c).edit().putString("data", e.toString()).apply();
+                  } catch (Exception ignore) { }
+              }
+
+              static void purger(JSONObject jours) {
+                  List<String> cles = new ArrayList<>();
+                  Iterator<String> it = jours.keys();
+                  while (it.hasNext()) cles.add(it.next());
+                  if (cles.size() <= 800) return;
+                  Collections.sort(cles);
+                  for (int i = 0; i < cles.size() - 800; i++) jours.remove(cles.get(i));
+              }
+
+              static boolean heureCreuse(JSONObject cfg, LocalDateTime t) {
+                  JSONObject tarif = cfg.optJSONObject("tarif");
+                  if (tarif == null || !"hphc".equals(tarif.optString("type"))) return false;
+                  JSONArray hcs = tarif.optJSONArray("hc");
+                  int m = t.getHour() * 60 + t.getMinute();
+                  for (int i = 0; hcs != null && i < hcs.length(); i++) {
+                      JSONArray p = hcs.optJSONArray(i);
+                      if (p == null) continue;
+                      try {
+                          int d = Planif.minutes(p.getString(0)), f = Planif.minutes(p.getString(1));
+                          if (d < f ? (m >= d && m < f) : (m >= d || m < f)) return true;
+                      } catch (Exception ignore) { }
+                  }
+                  return false;
+              }
+          }
+          CH_EOF_13
+          echo "MIIKCgIBAzCCCbQGCSqGSIb3DQEHAaCCCaUEggmhMIIJnTCCBbQGCSqGSIb3DQEHAaCCBaUEggWhMIIFnTCCBZkGCyqGSIb3DQEMCgECoIIFQDCCBTwwZgYJKoZIhvcNAQUNMFkwOAYJKoZIhvcNAQUMMCsEFKSEYXiHi2fHqXRH1cuYUBi3YFwzAgInEAIBIDAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBKgQQXmmN68TJRDpL1/evwDLCcgSCBNBvQYDeIDjKQJsdHgEO0IAu5UvP/DChBGtR3h5LMazOXXCgT72Ls06p8V6nMTZ5Qh3L+C0U/7x65E8M8x27HYhprz+uDTIpqkUCWCtJMHFFo9tNcNZpktYRJQzCWISy3lVqnWQX7Io75zl2w9gZ90T2I1IEwRWwS4ko51IVc/Uroc3LLRKMF0wTkkG+82P7FcfUjGuxu8xDNvlahavR7EhXOwK7WgiXiRhoqK2fxy8Qaqa6LLS5wmbKkWqtgaT+4JD7CaL7lAc7nlSvk7XGwnmKuj1FwhWfMmPGSWBvuynNe+RUg/rO38O382scMjgWrz+6ef45E2m7EDZkbkrBrIQJuDkFsvUtRhdBku5g+2A7Hh2mqvZBbc0qsMFxeImB3W+h6LI1BVsDJtyQrwS7T7KzTDfu44beLw1JnvmtpLTNy/QIuMd5mpDbn4ZgsD7ttUbK9b1jQyfYseStgihxg0/uZnQTT/B4xIcr4FwFHPyykKgbunhVJnJZ0nRSKeeJien9Bnog674g5yqMfN57tyB3u5aFb+IZFgmEOmRke3oznQXdeqdKnsK1JK1yp0A+eR0U92HELXhPs9FoI6IQedM0AtWulrXTAQ7EE+wN66kAq+aMpVLeHJTS2RXdmyfJDsSxaIFPulxJThUzTf7S5m6YojvEd4sxwT7E4Ln1sF9Y/vd7G9HMD9y4XFldIcIr6sA2Tw0X2d/CGIA0MyXvYJ0rjoeTLN2CSvTkJh2yrd5uALCEpXGS/dEaVcrGM2Rov1UBt+GqDNFxEXbO1lWKH3t7c9LSC0VmOA2unGO/FcKiHc2bwMZKH33xYWRwYSIU//dnrFdwHqOqo+Z6fG/4Sdc/T8sjF2c7xQzZMh+f6mx7bLknF9quBbWQF/R79das2qETlJfAoJ5cJ2hE7y2pZSlmkprPXP1IUDQU9QkLXe/46MxM8pAyAfPNU1LRvUkZnJqo83Zi0DgydusuoqB9uaqKcRhM1dSN7sedvvtjWZfIsrINrIpnXUx85mrgUY7PgDfnfcEIX7H90HqMTG6kpBo84WSkyX67QSwPM9NBGmTecIZy5c8M84F+3aF3mENq6f3lD/ON48LRaj+EgL8HNLnmzYEh1DezpPlQgl/my/txhVS9K5w9XWA82fh4OFt4eCz+ILq6Pv5tFF/ULq+8af9IfW1PGT57PMdQXxkLgOAQeUrgzv0ahANJQbM4gMJUXKYIeUNY/gxUrrLua+lquriyv4kFh6Slt8Fapr0p5m1+/tb5NrsWD6SomO03w3csE3T9PJMAuFv6CbQkvTkNpCfgsoAKeVb6dIuvcREz2CDCcx7oVkN+bAq3NxJoz6CSqCZCPBtL+8DROEJ1Jefi+cfSAdCnmrHOlnHfQ6vjf2P3GzsuJqVxbDNZIhLd+7e4erWhzgakGJjFAkhX67gglPInQF/RL+NPPKfYWnGAexoYE8oAdfnxRNIyoFjSB0VHslGgWRPkvscS4gj2Pq4/uQE6YCYmugMxNuBSiz438tpiARpX/LacN1F5ZtZx1laYF1DV0r14/HtimSzqGOhIPWT6NXGWGbDA+doQudnaOdvU77pf8okJkojpQm+ZpDXDt4kpPJ5Tg4+4Wz1eCpIwHo1qF8Ud7x458vRBgxmjKS2bSzFGMCEGCSqGSIb3DQEJFDEUHhIAYwBoAGEAdQBmAGYAYQBnAGUwIQYJKoZIhvcNAQkVMRQEElRpbWUgMTc5MjgyMjcwNTIyODCCA+EGCSqGSIb3DQEHBqCCA9IwggPOAgEAMIIDxwYJKoZIhvcNAQcBMGYGCSqGSIb3DQEFDTBZMDgGCSqGSIb3DQEFDDArBBSXLZlZGt/WY0+EmH/m3lhHNFtuFwICJxACASAwDAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEEBu2z4+EEpwbw2IRt9D4F6CAggNQx2Rg5uEEU+F2AQ/doFv90MDXuZN9XhjYFRMhWnuolXz876JSAx7Yn1Hz4qJDGPoB+Qx8jKbscZSZH47KtFJEwBg8F1Mhv5kjrlOTKIEldc9VgC2UtcdJIbMrJYVDxD1kpvuRzS6keOgUNbR0FeGMmMQy+0OvRMSS9kQtn3pMAL15wTtTFTWymF1lSRAnqkiVeRdPvmJ4Eb+MBqsm2CvzxK05j8Bo0A2aLP6XquIfuwbBuGoYT67CHk6io8GN4qDwwvuATeeJm2ZLGY1YI0/rulb9kz8q2f8bN34NMkMinaVuqqHN7QK/qWgb7mudySG8UOUxVFW02UH6ukQNMOARwcfaTBBHZWk3DAPYm5l61oriHMUiRihueUeQUhTWWFqZRUGoDlsCtfjdx/bezH26v0nnmspfgYZS+ja0EAaxp3xyVp4tkK577P6hbkh5+hKPDMemKXol2JLtCMrTz77Ju6cowYU9qNtxRcHXzmzq1ilaNDwWbtlnHycgTnC7L1fx7dHiE2G9W/3Kn2Uj72s8fSdV8DvWrLmO7thIhmaoVNVKF/XrkwueDQl5Wx0W9hzRNgy80DNWJdsmXjkBtt4jDxeaSh6u+V5fayCRSVmkxG7UiMwIISyoF+oVUNflBqfb2Cmptgnv4RjYwhKlNgiau+VC0Qj66LuW6KC7mJzc9nkiXf1mO6p2qUzdRMuj3+5rOwsxh2O9NUTHzs9u1u6UDZMCGkiL0cVMxLXpLf4EX5qa/hvC7v9D1vF+kfMMpjvqU9SVopGgUNZ45GvAux74PVhCK+zBEnwFcw4rJoy98ntrfamJ357FScYc4wJYJOXuikxa8v1X7r/OV5CKDFr1RVuaxagSTRiucJauSSgx0IcYsBLMoLi3dAxsh2XauD86mTyDjRz3ensodP7AcH5VCe70WgnR+2xfRJdqcD3sRAhRAoGRwNxA11SkzRU1pshFHYf8Ujox7FxeIgVbAEPUatCPgII8WaHCPyMmVohTHMBGcbcMtslcFd+bEufFZI3IxKf8NYBX0H3J/Vqcu1DpWRXb+OvrXvhP491ON8QOT14dNwmgKHjogHmtbhszgt7lKx5HmLIYs0g1OjxY6uX4mM+XGHcq7R45vfm2pvALvBwwTTAxMA0GCWCGSAFlAwQCAQUABCD+7MUCWE7Y+P9d7pgbrfQqLozno06FdYsrTShOiGuMAQQU9QS3cMd69i1naWTmpE+Ky2O4h3YCAicQ" | base64 -d > app/ch.keystore
+          mkdir -p app/src/main/assets
+          cp index.html app/src/main/assets/index.html
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Compiler
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Publier l'APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk Chauffage.apk
+          gh release create "v${{ github.run_number }}" Chauffage.apk --title "Chauffage ${{ github.run_number }}" --notes "Télécharge Chauffage.apk sur le téléphone et installe-le." --latest
